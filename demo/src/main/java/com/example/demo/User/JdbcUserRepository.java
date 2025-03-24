@@ -1,15 +1,17 @@
 package com.example.demo.User;
 
 
-
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.Assert;
-
+import org.springframework.dao.DataAccessException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
+@Primary
 public class JdbcUserRepository implements UserRepository {
 
     private final JdbcClient jdbcClient;
@@ -31,14 +33,21 @@ public class JdbcUserRepository implements UserRepository {
                 .optional();
     }
 
+    
+
     public void create(User user) {
-        var updated = jdbcClient.sql("INSERT INTO users (id, name, username, email, password, role) VALUES (?, ?, ?, ?, ?, ?)")
-                .params(List.of(user.id(), user.name(), user.username(), user.email(), user.password(), user.role().toString()))
-                .update();
-
-        Assert.state(updated == 1, "Failed to create user " + user.username());
+        try {
+            var updated = jdbcClient.sql("INSERT INTO users (name, username, email, password, role) VALUES (?, ?, ?, ?, ?)") // Omit 'id'
+            .params(List.of(user.name(), user.username(), user.email(), user.password(), user.role().toString())) // Omit 'id'
+            .update();
+    
+            Assert.state(updated == 1, "Failed to create user " + user.username());
+        } catch (DataAccessException e) {
+            System.out.println("DataAccess Error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
-
+    
     public void update(User user, Integer id) {
         var updated = jdbcClient.sql("UPDATE users SET name = ?, username = ?, email = ?, password = ?, role = ? WHERE id = ?")
                 .params(List.of(user.name(), user.username(), user.email(), user.password(), user.role().toString(), id))

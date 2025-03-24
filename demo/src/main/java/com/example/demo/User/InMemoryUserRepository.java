@@ -3,7 +3,7 @@ package com.example.demo.User;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Primary;
+
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Repository
-@Primary
+
 class InMemoryUserRepository implements UserRepository {
 
     private static final Logger log = LoggerFactory.getLogger(InMemoryUserRepository.class);
