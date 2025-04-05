@@ -3,69 +3,99 @@ package com.example.demo.User;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.stereotype.Repository;
-
+import com.example.demo.subclasses.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 @Repository
-
-class InMemoryUserRepository implements UserRepository {
+public class InMemoryUserRepository implements UserRepository {
 
     private static final Logger log = LoggerFactory.getLogger(InMemoryUserRepository.class);
     private final List<User> users = new ArrayList<>();
 
-    public List<User> findAll() {
-        return users;
-    }
-
+    @Override
     public Optional<User> findById(Integer id) {
-        return Optional.ofNullable(users.stream()
-                .filter(user -> user.id() == id)
-                .findFirst()
-                .orElseThrow(UserNotFoundException::new));
+        return users.stream()
+                .filter(user -> Objects.equals(user.getId(), id))
+                .findFirst();
     }
 
+    @Override
+    public Optional<User> findByUsername(String username) {
+        return users.stream()
+                .filter(user -> Objects.equals(user.getUsername(), username))
+                .findFirst();
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return users.stream()
+                .filter(user -> Objects.equals(user.getEmail(), email))
+                .findFirst();
+    }
+
+    @Override
     public void create(User user) {
-        User newUser = new User(user.id(), user.name(), user.username(), user.email(), user.password(), user.role());
-        users.add(newUser);
+        users.add(user);
     }
 
+    @Override
     public void update(User newUser, Integer id) {
-        Optional<User> existingUser = findById(id);
-        if (existingUser.isPresent()) {
-            var user = existingUser.get();
-            log.info("Updating Existing User: " + user);
-            users.set(users.indexOf(user), newUser);
-        }
+        findById(id).ifPresent(existingUser -> {
+            int index = users.indexOf(existingUser);
+            users.set(index, newUser);
+            log.info("Updated user with ID: " + id);
+        });
     }
 
+    @Override
     public void delete(Integer id) {
-        log.info("Deleting User: " + id);
-        users.removeIf(user -> user.id().equals(id));
+        users.removeIf(user -> Objects.equals(user.getId(), id));
+        log.info("Deleted user with ID: " + id);
     }
 
+    @Override
     public int count() {
         return users.size();
     }
 
+    @Override
     public void saveAll(List<User> users) {
-        users.forEach(this::create);
+        this.users.addAll(users);
     }
 
-    public List<User> findByRole(Role role) {
+    // ✅ Fetch students
+    @Override
+    public List<Student> findStudents() {
         return users.stream()
-                .filter(user -> Objects.equals(user.role(), role))
+                .filter(user -> user instanceof Student)
+                .map(user -> (Student) user) // Cast to Student
+                .toList();
+    }
+
+    // ✅ Fetch teachers
+    @Override
+    public List<Teacher> findTeachers() {
+        return users.stream()
+                .filter(user -> user instanceof Teacher)
+                .map(user -> (Teacher) user) // Cast to Teacher
+                .toList();
+    }
+
+    // ✅ Fetch admins
+    @Override
+    public List<Admin> findAdmins() {
+        return users.stream()
+                .filter(user -> user instanceof Admin)
+                .map(user -> (Admin) user) // Cast to Admin
                 .toList();
     }
 
     @PostConstruct
     private void init() {
-        // Example data for testing
-        users.add(new User(1, "John Doe", "johndoe", "john@example.com", "password123", Role.STUDENT));
-        users.add(new User(2, "Jane Smith", "janesmith", "jane@example.com", "password456", Role.TEACHER));
+        log.info("InMemoryUserRepository initialized.");
     }
 }

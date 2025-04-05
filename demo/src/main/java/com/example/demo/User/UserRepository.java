@@ -1,13 +1,16 @@
 package com.example.demo.User;
+import com.example.demo.subclasses.*;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository {
 
-    List<User> findAll();
-
     Optional<User> findById(Integer id);
+
+    Optional<User> findByUsername(String username);
+
+    Optional<User> findByEmail(String email);
 
     void create(User user);
 
@@ -19,5 +22,8 @@ public interface UserRepository {
 
     void saveAll(List<User> users);
 
-    List<User> findByRole(Role role);
+    // Specific methods for each user type
+    List<Student> findStudents();
+    List<Teacher> findTeachers();
+    List<Admin> findAdmins();
 }

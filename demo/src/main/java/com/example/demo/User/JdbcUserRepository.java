@@ -1,12 +1,11 @@
 package com.example.demo.User;
 
-
+import com.example.demo.subclasses.*;
 import org.springframework.context.annotation.Primary;
-import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.Assert;
-import org.springframework.dao.DataAccessException;
-import java.sql.SQLException;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -14,68 +13,184 @@ import java.util.Optional;
 @Primary
 public class JdbcUserRepository implements UserRepository {
 
-    private final JdbcClient jdbcClient;
+    private final JdbcTemplate jdbcTemplate;
 
-    public JdbcUserRepository(JdbcClient jdbcClient) {
-        this.jdbcClient = jdbcClient;
+    public JdbcUserRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<User> findAll() {
-        return jdbcClient.sql("SELECT * FROM users")
-                .query(User.class)
-                .list();
-    }
-
+    @Override
     public Optional<User> findById(Integer id) {
-        return jdbcClient.sql("SELECT id, name, username, email, password, role FROM users WHERE id = :id")
-                .param("id", id)
-                .query(User.class)
-                .optional();
+        String sql = "SELECT id, name, username, email, password FROM users WHERE id = ?";
+        User user = jdbcTemplate.queryForObject(sql, new Object[]{id}, (rs, rowNum) -> {
+            if (rs.getString("email").contains("student")) {
+                return new Student(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getString("email"),
+                        rs.getString("password")
+                );
+            } else if (rs.getString("email").contains("teacher")) {
+                return new Teacher(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getString("email"),
+                        rs.getString("password")
+                );
+            } else if (rs.getString("email").contains("admin")) {
+                return new Admin(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getString("email"),
+                        rs.getString("password")
+                );
+            } else {
+                return null;
+            }
+        });
+        return Optional.ofNullable(user);
     }
 
-    
+    @Override
+    public Optional<User> findByUsername(String username) {
+        String sql = "SELECT id, name, username, email, password FROM users WHERE username = ?";
+        User user = jdbcTemplate.queryForObject(sql, new Object[]{username}, (rs, rowNum) -> {
+            if (rs.getString("email").contains("student")) {
+                return new Student(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getString("email"),
+                        rs.getString("password")
+                );
+            } else if (rs.getString("email").contains("teacher")) {
+                return new Teacher(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getString("email"),
+                        rs.getString("password")
+                );
+            } else if (rs.getString("email").contains("admin")) {
+                return new Admin(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getString("email"),
+                        rs.getString("password")
+                );
+            } else {
+                return null;
+            }
+        });
+        return Optional.ofNullable(user);
+    }
 
+    @Override
+    public Optional<User> findByEmail(String email) {
+        String sql = "SELECT id, name, username, email, password FROM users WHERE email = ?";
+        User user = jdbcTemplate.queryForObject(sql, new Object[]{email}, (rs, rowNum) -> {
+            if (rs.getString("email").contains("student")) {
+                return new Student(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getString("email"),
+                        rs.getString("password")
+                );
+            } else if (rs.getString("email").contains("teacher")) {
+                return new Teacher(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getString("email"),
+                        rs.getString("password")
+                );
+            } else if (rs.getString("email").contains("admin")) {
+                return new Admin(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getString("email"),
+                        rs.getString("password")
+                );
+            } else {
+                return null;
+            }
+        });
+        return Optional.ofNullable(user);
+    }
+
+    @Override
     public void create(User user) {
-        try {
-            var updated = jdbcClient.sql("INSERT INTO users (name, username, email, password, role) VALUES (?, ?, ?, ?, ?)") // Omit 'id'
-            .params(List.of(user.name(), user.username(), user.email(), user.password(), user.role().toString())) // Omit 'id'
-            .update();
-    
-            Assert.state(updated == 1, "Failed to create user " + user.username());
-        } catch (DataAccessException e) {
-            System.out.println("DataAccess Error: " + e.getMessage());
-            e.printStackTrace();
-        }
+        String sql = "INSERT INTO users (name, username, email, password) VALUES (?, ?, ?, ?)";
+        int updated = jdbcTemplate.update(sql, user.getName(), user.getUsername(), user.getEmail(), user.getPassword());
+        Assert.state(updated == 1, "Failed to create user " + user.getUsername());
     }
-    
+
+    @Override
     public void update(User user, Integer id) {
-        var updated = jdbcClient.sql("UPDATE users SET name = ?, username = ?, email = ?, password = ?, role = ? WHERE id = ?")
-                .params(List.of(user.name(), user.username(), user.email(), user.password(), user.role().toString(), id))
-                .update();
-
-        Assert.state(updated == 1, "Failed to update user " + user.username());
+        String sql = "UPDATE users SET name = ?, username = ?, email = ?, password = ? WHERE id = ?";
+        int updated = jdbcTemplate.update(sql, user.getName(), user.getUsername(), user.getEmail(), user.getPassword(), id);
+        Assert.state(updated == 1, "Failed to update user " + user.getUsername());
     }
 
+    @Override
     public void delete(Integer id) {
-        var updated = jdbcClient.sql("DELETE FROM users WHERE id = :id")
-                .param("id", id)
-                .update();
-
+        String sql = "DELETE FROM users WHERE id = ?";
+        int updated = jdbcTemplate.update(sql, id);
         Assert.state(updated == 1, "Failed to delete user " + id);
     }
 
+    @Override
     public int count() {
-        return jdbcClient.sql("SELECT * FROM users").query().listOfRows().size();
+        String sql = "SELECT COUNT(*) FROM users";
+        return jdbcTemplate.queryForObject(sql, Integer.class);
     }
 
+    @Override
     public void saveAll(List<User> users) {
-        users.forEach(this::create);
+        for (User user : users) {
+            create(user);
+        }
     }
 
-    public List<User> findByRole(Role role) {
-        return jdbcClient.sql("SELECT * FROM users WHERE role = :role")
-                .param("role", role.toString())
-                .query(User.class)
-                .list();
+    @Override
+    public List<Student> findStudents() {
+        String sql = "SELECT id, name, username, email, password FROM users WHERE email LIKE '%student%'";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new Student(
+                rs.getInt("id"),
+                rs.getString("name"),
+                rs.getString("username"),
+                rs.getString("email"),
+                rs.getString("password")
+        ));
+    }
+
+    @Override
+    public List<Teacher> findTeachers() {
+        String sql = "SELECT id, name, username, email, password FROM users WHERE email LIKE '%teacher%'";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new Teacher(
+                rs.getInt("id"),
+                rs.getString("name"),
+                rs.getString("username"),
+                rs.getString("email"),
+                rs.getString("password")
+        ));
+    }
+
+    @Override
+    public List<Admin> findAdmins() {
+        String sql = "SELECT id, name, username, email, password FROM users WHERE email LIKE '%admin%'";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new Admin(
+                rs.getInt("id"),
+                rs.getString("name"),
+                rs.getString("username"),
+                rs.getString("email"),
+                rs.getString("password")
+        ));
     }
 }
