@@ -1,57 +1,58 @@
 package com.example.demo.Assignment;
 
-import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/assignments")
-class AssignmentController {
+public class AssignmentController {
 
-    private final AssignmentRepository assignmentRepository;
+    @Autowired
+    private AssignmentRepository assignmentRepository;
 
-    AssignmentController(AssignmentRepository assignmentRepository) {
-        this.assignmentRepository = assignmentRepository;
-    }
-
+    // Get all assignments
     @GetMapping
-    List<Assignment> findAll() {
+    public List<Assignment> getAllAssignments() {
         return assignmentRepository.findAll();
     }
 
+    // Get a specific assignment by ID
     @GetMapping("/{id}")
-    Assignment findById(@PathVariable Integer id) {
+    public ResponseEntity<Assignment> getAssignmentById(@PathVariable Long id) {
         Optional<Assignment> assignment = assignmentRepository.findById(id);
-        if (assignment.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Assignment not found.");
-        }
-        return assignment.get();
+        return assignment.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @ResponseStatus(HttpStatus.CREATED)
+    // Create a new assignment
     @PostMapping
-    void create(@Valid @RequestBody Assignment assignment) {
-        assignmentRepository.create(assignment);
+    public ResponseEntity<Assignment> createAssignment(@RequestBody Assignment assignment) {
+        Assignment savedAssignment = assignmentRepository.save(assignment);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedAssignment);
     }
 
-    @ResponseStatus(HttpStatus.NO_CONTENT)
+    // Update an existing assignment
     @PutMapping("/{id}")
-    void update(@Valid @RequestBody Assignment assignment, @PathVariable Integer id) {
-        assignmentRepository.update(assignment, id);
+    public ResponseEntity<Assignment> updateAssignment(@PathVariable Long id, @RequestBody Assignment updatedAssignment) {
+        if (!assignmentRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        updatedAssignment.setId(id);
+        Assignment savedAssignment = assignmentRepository.save(updatedAssignment);
+        return ResponseEntity.ok(savedAssignment);
     }
 
-    @ResponseStatus(HttpStatus.NO_CONTENT)
+    // Delete an assignment
     @DeleteMapping("/{id}")
-    void delete(@PathVariable Integer id) {
-        assignmentRepository.delete(id);
-    }
-
-    @GetMapping("/teacher/{teacherId}")
-    List<Assignment> findByTeacher(@PathVariable Integer teacherId) {
-        return assignmentRepository.findByTeacher(teacherId);
+    public ResponseEntity<Void> deleteAssignment(@PathVariable Long id) {
+        if (!assignmentRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        assignmentRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

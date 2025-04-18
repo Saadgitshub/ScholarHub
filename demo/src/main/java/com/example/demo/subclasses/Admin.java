@@ -1,18 +1,18 @@
 package com.example.demo.subclasses;
 import com.example.demo.User.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
+import jakarta.persistence.*;
 
+@Table(name = "admins") 
 @Entity
-@DiscriminatorValue("ADMIN")  // Define the discriminator value for Admin
+@JsonIgnoreProperties(ignoreUnknown = true)
+
 public class Admin extends User {
 
-    public Admin(Integer id, String name, String username, String email, String password) {
-        super(id, name, username, email, password);
-    }
+    public Admin() {}
 
-    public Admin() {
-        super();
+    public Admin(String username, String email, String password) {
+        super(username, email, password);
     }
 }

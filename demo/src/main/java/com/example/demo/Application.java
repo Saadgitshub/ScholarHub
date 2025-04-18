@@ -1,69 +1,73 @@
 package com.example.demo;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.demo.Grade.Grade;
+import com.example.demo.Grade.GradeRepository;
+import com.example.demo.Group.*;
+import com.example.demo.Level.*;
+import com.example.demo.Subject.*;
+import com.example.demo.WorkReturn.WorkReturn;
+import com.example.demo.WorkReturn.WorkReturnRepository;
+import com.example.demo.subclasses.*;
+import com.example.demo.Assignment.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import com.example.demo.User.*;
-import com.example.demo.subclasses.*; // Import User classes (Student, Teacher, Admin)
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 
 import java.util.List;
 
 @SpringBootApplication
+@EntityScan("com.example.demo")
+@EnableJpaRepositories("com.example.demo")
 public class Application {
-
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Bean
-public CommandLineRunner initDatabase() {
+   @Bean
+CommandLineRunner testEverything(StudentRepository studentRepo,
+                                  TeacherRepository teacherRepo,
+                                  GroupRepository groupRepo,
+                                  LevelRepository levelRepo,
+                                  SubjectRepository subjectRepo,
+                                  AssignmentRepository assignmentRepo,
+                                  GradeRepository gradeRepo,
+                                  WorkReturnRepository workReturnRepo,
+                                  AdminRepository adminRepo) {
     return args -> {
-        try {
-            // Creating new users with unique names and emails
-            User student1 = new Student(null, "Alice Johnson", "alice.johnson", "alice.johnson@student.com", "password1001");
-            User student2 = new Student(null, "Bob Miller", "bob.miller", "bob.miller@student.com", "password1002");
-            User teacher = new Teacher(null, "Catherine Smith", "catherine.smith", "catherine.smith@teacher.com", "password1003");
-            User admin = new Admin(null, "David Brown", "david.brown", "david.brown@admin.com", "password1004");
+        Level level = new Level("First Level");
+        levelRepo.save(level);
 
-            // Save users to the repository
-            userRepository.create(student1);
-            userRepository.create(student2);
-            userRepository.create(teacher);
-            userRepository.create(admin);
+        Subject math = new Subject("Math", level);
+        subjectRepo.save(math);
 
-            System.out.println("✅ Users added to the database.");
-        } catch (Exception e) {
-            System.err.println("❌ Error inserting users: " + e.getMessage());
-        }
+        Teacher teacher = new Teacher("teacher1", "teacher1@example.com", "pass123");
+        teacher.setSubjects(List.of(math));
+        teacherRepo.save(teacher);
+
+        // Create Group and add Teacher to the Group using addTeacher method
+        Group group = new Group("Group A", level);
+        group.addTeacher(teacher);  // Add teacher to the group
+        groupRepo.save(group);
+
+        Student student = new Student("student1", "student1@example.com", "pass456", "12th Grade", group, level);
+        studentRepo.save(student);
+
+        Admin admin = new Admin("admin1", "admin1@example.com", "adminpass");
+        adminRepo.save(admin);
+
+        Assignment assignment = new Assignment("Math Homework", "Solve equations", group, subjectRepo.findById(math.getId()).orElse(null));
+        assignmentRepo.save(assignment);
+
+        Grade grade = new Grade("A+", student, assignment);
+        gradeRepo.save(grade);
+
+        WorkReturn workReturn = new WorkReturn("student1's submission", student, assignment);
+        workReturnRepo.save(workReturn);
+
+        System.out.println("✅ All entities saved successfully!");
     };
 }
-    @Bean
-    public CommandLineRunner testDatabase() {
-        return args -> {
-            try {
-                // Fetch Students
-                System.out.println("📚 Retrieving Students:");
-                List<Student> students = userRepository.findStudents();
-                students.forEach(s -> System.out.println("Student: " + s.getUsername() + ", Email: " + s.getEmail()));
-
-                // Fetch Teachers
-                System.out.println("\n🎓 Retrieving Teachers:");
-                List<Teacher> teachers = userRepository.findTeachers();
-                teachers.forEach(t -> System.out.println("Teacher: " + t.getUsername() + ", Email: " + t.getEmail()));
-
-                // Fetch Admins
-                System.out.println("\n🛠️ Retrieving Admins:");
-                List<Admin> admins = userRepository.findAdmins();
-                admins.forEach(a -> System.out.println("Admin: " + a.getUsername() + ", Email: " + a.getEmail()));
-
-            } catch (Exception e) {
-                System.err.println("❌ Error retrieving users: " + e.getMessage());
-            }
-        };
-    }
+      
 }
