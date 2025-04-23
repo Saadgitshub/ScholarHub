@@ -13,8 +13,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Entity
 @Table(name = "students")
 @JsonIgnoreProperties({
-    "grades", "returns", "group", "level", "password", "email", "username"
+    "grades", "returns", "password"
 })
+
 public class Student extends User {
 
     private String gradeLevel;
@@ -86,4 +87,6 @@ public class Student extends User {
     public void setReturns(List<WorkReturn> returns) {
         this.returns = returns;
     }
+
+    
 }

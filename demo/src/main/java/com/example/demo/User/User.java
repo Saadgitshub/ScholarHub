@@ -1,14 +1,20 @@
 package com.example.demo.User;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.example.demo.subclasses.*;
 
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "users")
 @Inheritance(strategy = InheritanceType.JOINED) // You can change this to SINGLE_TABLE if preferred
-@JsonIgnoreProperties(value = {"password", "roles", "otherSensitiveField", "students", "teachers"}, ignoreUnknown = true)
-
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type")
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = Student.class, name = "student"),
+    @JsonSubTypes.Type(value = Teacher.class, name = "teacher"),
+    @JsonSubTypes.Type(value = Admin.class, name = "admin")
+})
 public abstract class User {
 
     @Id
@@ -32,6 +38,7 @@ public abstract class User {
         this.email = email;
         this.password = password;
     }
+
 
     // Getters and setters
     public Long getId() {

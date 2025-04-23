@@ -56,4 +56,5 @@ public class Teacher extends User {
     public void setGroups(List<Group> groups) {
         this.groups = groups;
     }
+    
 }
